@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 export default function Home() {
   const [automatic, setAutomatic] = useState(true);
   const [percentage, setPercentage] = useState(60);
@@ -10,11 +12,12 @@ export default function Home() {
   }, [percentage, isFilling]);
 
   const toggleAutomatic = () => {
-    setAutomatic(!automatic);
+    const newValue = !automatic;
+    setAutomatic(newValue);
     fetch("https://tu-n8n.com/webhook/automatico", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ automatic: !automatic }),
+      body: JSON.stringify({ automatic: newValue }),
     });
   };
 
@@ -27,73 +30,99 @@ export default function Home() {
     });
   };
 
-  return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>El Ranchito</h1>
+  const stopFilling = () => {
+    setIsFilling(false);
+    fetch("https://tu-n8n.com/webhook/apagar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stop: true }),
+    });
+  };
 
-      <div style={styles.switchContainer}>
-        <span style={styles.label}>automatic</span>
-        <div
-          style={{
-            ...styles.switch,
-            backgroundColor: automatic ? "#2ecc71" : "#444",
-          }}
-          onClick={toggleAutomatic}
-        >
+  return (
+    <div style={styles.page}>
+      <div style={styles.container}>
+        <h1 style={styles.title}>El Ranchito</h1>
+
+        <div style={styles.switchContainer}>
+          <span style={styles.label}>automatic</span>
           <div
             style={{
-              ...styles.knob,
-              transform: automatic ? "translateX(20px)" : "translateX(0)",
+              ...styles.switch,
+              backgroundColor: automatic ? "#2ecc71" : "#555",
             }}
-          />
+            onClick={toggleAutomatic}
+          >
+            <div
+              style={{
+                ...styles.knob,
+                transform: automatic ? "translateX(20px)" : "translateX(0)",
+              }}
+            />
+          </div>
+        </div>
+
+        <div style={styles.tank}>
+          <div
+            style={{
+              ...styles.fill,
+              height: `${percentage}%`,
+              backgroundColor: isFilling ? "#00ff00" : percentage < 20 ? "#ff4d4d" : "#00bfff",
+              animation: isFilling ? "pulse 1s infinite alternate" : "none",
+            }}
+          >
+            <span style={styles.percentageText}>
+              {percentage}% {isFilling && <span style={styles.bolt}>⚡</span>}
+            </span>
+          </div>
+        </div>
+
+        <div style={styles.navbar}>
+          <button
+            style={{
+              ...styles.fab,
+              backgroundColor: isFilling ? "#555" : "#00bfff",
+              cursor: isFilling ? "default" : "pointer",
+            }}
+            onClick={() => !isFilling && startFilling()}
+          >
+            {isFilling ? "⏳" : "+"}
+          </button>
+
+          <button
+            style={styles.stopButton}
+            onClick={stopFilling}
+          >
+            X
+          </button>
         </div>
       </div>
 
-      <div style={styles.tank}>
-        <div
-          style={{
-            ...styles.fill,
-            height: `${percentage}%`,
-            backgroundColor:
-              percentage < 20 ? "#ff4d4d" : isFilling ? "#00ccff" : "#00bfff",
-          }}
-        >
-          <span style={styles.percentageText}>
-            {percentage}% {isFilling && "⚡"}
-          </span>
-        </div>
-      </div>
-
-      <div style={styles.navbar}>
-        <div style={styles.navItem} />
-        <div
-          style={{
-            ...styles.fab,
-            backgroundColor: isFilling ? "#444" : "#00bfff",
-            cursor: isFilling ? "default" : "pointer",
-          }}
-          onClick={() => !isFilling && startFilling()}
-        >
-          {isFilling ? "⏳" : "+"}
-        </div>
-        <div style={styles.navItem} />
-      </div>
+      <style jsx global>{`
+        body {
+          margin: 0;
+          background-color: #000;
+        }
+        @keyframes pulse {
+          0% { opacity: 1; }
+          100% { opacity: 0.7; }
+        }
+      `}</style>
     </div>
   );
 }
 
-import { useState, useEffect } from "react";
-
 const styles = {
-  container: {
-    backgroundColor: "#000",
-    color: "#fff",
+  page: {
     minHeight: "100vh",
+    backgroundColor: "#000",
+  },
+  container: {
+    color: "#fff",
     padding: "20px",
     fontFamily: "Arial, sans-serif",
     textAlign: "center",
     boxSizing: "border-box",
-    overflow: "hidden",
   },
   title: {
     fontSize: "28px",
@@ -146,13 +175,17 @@ const styles = {
     transition: "height 0.5s, background-color 0.5s",
   },
   percentageText: {
-    fontSize: "16px",
+    fontSize: "18px",
     color: "#fff",
     fontWeight: "bold",
     position: "absolute",
     top: "10px",
     width: "100%",
     textAlign: "center",
+  },
+  bolt: {
+    fontSize: "24px",
+    marginLeft: "6px",
   },
   navbar: {
     position: "fixed",
@@ -162,12 +195,9 @@ const styles = {
     height: "60px",
     backgroundColor: "#111",
     display: "flex",
-    justifyContent: "space-around",
+    justifyContent: "center",
     alignItems: "center",
-  },
-  navItem: {
-    width: "40px",
-    height: "40px",
+    gap: "20px",
   },
   fab: {
     width: "60px",
@@ -178,6 +208,18 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    transition: "all 0.3s",
+    border: "none",
+  },
+  stopButton: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "20px",
+    fontSize: "22px",
+    backgroundColor: "#ff4d4d",
+    color: "#fff",
+    border: "none",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
   },
 };
