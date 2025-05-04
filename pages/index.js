@@ -1,8 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Home() {
-  const [automatic, setAutomatic] = useState(false);
-  const waterLevel = 60; // Podés cambiar esto para testear
+  const [automatic, setAutomatic] = useState(true);
+  const [waterLevel, setWaterLevel] = useState(60); // valor inicial simulado
+
+  // Leer estado guardado en el navegador
+  useEffect(() => {
+    const savedAuto = localStorage.getItem('automatic');
+    if (savedAuto !== null) {
+      setAutomatic(savedAuto === 'true');
+    }
+  }, []);
+
+  // Guardar estado cuando cambia
+  useEffect(() => {
+    localStorage.setItem('automatic', automatic);
+  }, [automatic]);
+
+  // Simula actualización de porcentaje desde sensor
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetch('/api/sensor') // podés reemplazar por una URL real de n8n
+        .then(res => res.json())
+        .then(data => {
+          if (data?.percent) setWaterLevel(data.percent);
+        })
+        .catch(() => {
+          // simula agua bajando si falla
+          setWaterLevel(w => Math.max(w - 1, 0));
+        });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const toggleAutomatic = () => {
+    setAutomatic(!automatic);
+    fetch('https://tu-n8n.com/webhook/automatico', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ automatic: !automatic }),
+    });
+  };
+
+  const cargarAgua = () => {
+    fetch('https://tu-n8n.com/webhook/cargar-agua', {
+      method: 'POST'
+    });
+  };
 
   const tankColor = waterLevel < 20 ? '#FF4C4C' : '#00BFFF';
 
@@ -17,7 +61,7 @@ export default function Home() {
             ...styles.toggle,
             backgroundColor: automatic ? '#4CAF50' : '#444',
           }}
-          onClick={() => setAutomatic(!automatic)}
+          onClick={toggleAutomatic}
         >
           <div
             style={{
@@ -40,7 +84,9 @@ export default function Home() {
         </div>
       </div>
 
-      <button style={styles.button}>Cargar agua</button>
+      <button style={styles.button} onClick={cargarAgua}>
+        Cargar agua
+      </button>
     </div>
   );
 }
