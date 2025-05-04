@@ -1,156 +1,118 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>El Ranchito</title>
-  <style>
-    body {
-      margin: 0;
-      background-color: black;
-      font-family: 'Arial', sans-serif;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
+export default function Home() {
+  const percentage = 60;
+  const automatic = true;
 
-    h1 {
-      font-size: 2em;
-      margin-bottom: 10px;
-    }
+  return (
+    <div style={styles.container}>
+      <h1 style={styles.title}>El Ranchito</h1>
 
-    .switch {
-      display: flex;
-      align-items: center;
-      margin-bottom: 30px;
-    }
+      <div style={styles.toggleContainer}>
+        <span style={styles.toggleLabel}>automatic</span>
+        <div
+          style={{
+            ...styles.toggle,
+            backgroundColor: automatic ? '#00cc66' : '#333',
+          }}
+        >
+          <div
+            style={{
+              ...styles.toggleCircle,
+              marginLeft: automatic ? '24px' : '2px',
+            }}
+          />
+        </div>
+      </div>
 
-    .switch-label {
-      margin-right: 10px;
-    }
+      <div style={styles.tankContainer}>
+        <div style={{ ...styles.water, height: `${percentage}%`, backgroundColor: percentage < 20 ? 'red' : '#33ccff' }}>
+          <span style={styles.waterText}>{percentage}%</span>
+        </div>
+      </div>
 
-    .switch-toggle {
-      position: relative;
-      width: 50px;
-      height: 26px;
-    }
+      <button style={styles.button} onClick={() => alert('Cargar agua')}>
+        Cargar agua
+      </button>
 
-    .switch-toggle input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
+      <div style={styles.moreDots}>⋯</div>
+    </div>
+  );
+}
 
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: grey;
-      transition: .4s;
-      border-radius: 30px;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 20px;
-      width: 20px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: .4s;
-      border-radius: 50%;
-    }
-
-    input:checked + .slider {
-      background-color: #00c853;
-    }
-
-    input:checked + .slider:before {
-      transform: translateX(24px);
-    }
-
-    .tank {
-      width: 120px;
-      height: 200px;
-      border: 4px solid white;
-      border-radius: 20px 20px 10px 10px;
-      overflow: hidden;
-      position: relative;
-      margin-bottom: 40px;
-    }
-
-    .water {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 60%;
-      background-color: #00bfff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: white;
-      font-weight: bold;
-    }
-
-    .more {
-      font-size: 28px;
-      cursor: pointer;
-    }
-
-    .btn {
-      background: black;
-      border: 2px solid white;
-      color: white;
-      padding: 10px 20px;
-      font-size: 16px;
-      border-radius: 10px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    @media (max-width: 500px) {
-      h1 {
-        font-size: 1.5em;
-      }
-
-      .tank {
-        width: 100px;
-        height: 170px;
-      }
-
-      .btn {
-        font-size: 14px;
-        padding: 8px 16px;
-      }
-    }
-  </style>
-</head>
-<body>
-
-  <h1>El Ranchito</h1>
-
-  <div class="switch">
-    <span class="switch-label">automatic</span>
-    <label class="switch-toggle">
-      <input type="checkbox" checked>
-      <span class="slider"></span>
-    </label>
-  </div>
-
-  <div class="tank">
-    <div class="water">60%</div>
-  </div>
-
-  <button class="btn">Cargar agua</button>
-
-  <div class="more">⋮</div>
-
-</body>
-</html>
+const styles = {
+  container: {
+    backgroundColor: 'black',
+    color: 'white',
+    fontFamily: 'sans-serif',
+    textAlign: 'center',
+    height: '100vh',
+    paddingTop: '40px',
+  },
+  title: {
+    fontSize: '24px',
+    fontWeight: 'bold',
+    marginBottom: '16px',
+  },
+  toggleContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '24px',
+    gap: '8px',
+  },
+  toggleLabel: {
+    fontSize: '14px',
+  },
+  toggle: {
+    width: '40px',
+    height: '20px',
+    borderRadius: '10px',
+    backgroundColor: '#333',
+    position: 'relative',
+    transition: 'all 0.3s ease',
+  },
+  toggleCircle: {
+    width: '16px',
+    height: '16px',
+    borderRadius: '50%',
+    backgroundColor: '#fff',
+    position: 'absolute',
+    top: '2px',
+    transition: 'all 0.3s ease',
+  },
+  tankContainer: {
+    width: '100px',
+    height: '200px',
+    border: '2px solid white',
+    borderRadius: '12px',
+    margin: '0 auto',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column-reverse',
+    backgroundColor: '#000',
+  },
+  water: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waterText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: '14px',
+  },
+  button: {
+    marginTop: '30px',
+    padding: '10px 20px',
+    border: '1px solid white',
+    backgroundColor: 'black',
+    color: 'white',
+    borderRadius: '8px',
+    fontSize: '14px',
+    cursor: 'pointer',
+  },
+  moreDots: {
+    fontSize: '24px',
+    marginTop: '32px',
+  },
+};
