@@ -1,118 +1,123 @@
+import { useState } from 'react';
+
 export default function Home() {
-  const percentage = 60;
-  const automatic = true;
+  const [automatic, setAutomatic] = useState(false);
+  const waterLevel = 60; // Podés cambiar esto para testear
+
+  const tankColor = waterLevel < 20 ? '#FF4C4C' : '#00BFFF';
 
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>El Ranchito</h1>
 
-      <div style={styles.toggleContainer}>
-        <span style={styles.toggleLabel}>automatic</span>
+      <div style={styles.toggleRow}>
+        <span style={styles.label}>automatic</span>
         <div
           style={{
             ...styles.toggle,
-            backgroundColor: automatic ? '#00cc66' : '#333',
+            backgroundColor: automatic ? '#4CAF50' : '#444',
           }}
+          onClick={() => setAutomatic(!automatic)}
         >
           <div
             style={{
-              ...styles.toggleCircle,
-              marginLeft: automatic ? '24px' : '2px',
+              ...styles.toggleDot,
+              transform: automatic ? 'translateX(20px)' : 'translateX(0px)',
             }}
           />
         </div>
       </div>
 
-      <div style={styles.tankContainer}>
-        <div style={{ ...styles.water, height: `${percentage}%`, backgroundColor: percentage < 20 ? 'red' : '#33ccff' }}>
-          <span style={styles.waterText}>{percentage}%</span>
+      <div style={styles.tank}>
+        <div
+          style={{
+            ...styles.water,
+            height: `${waterLevel}%`,
+            backgroundColor: tankColor,
+          }}
+        >
+          <span style={styles.waterText}>{waterLevel}%</span>
         </div>
       </div>
 
-      <button style={styles.button} onClick={() => alert('Cargar agua')}>
-        Cargar agua
-      </button>
-
-      <div style={styles.moreDots}>⋯</div>
+      <button style={styles.button}>Cargar agua</button>
     </div>
   );
 }
 
 const styles = {
   container: {
-    backgroundColor: 'black',
-    color: 'white',
-    fontFamily: 'sans-serif',
-    textAlign: 'center',
-    height: '100vh',
-    paddingTop: '40px',
-  },
-  title: {
-    fontSize: '24px',
-    fontWeight: 'bold',
-    marginBottom: '16px',
-  },
-  toggleContainer: {
+    backgroundColor: '#000',
+    color: '#fff',
+    minHeight: '100vh',
+    padding: 20,
     display: 'flex',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: '24px',
-    gap: '8px',
+    fontFamily: 'Arial, sans-serif',
   },
-  toggleLabel: {
-    fontSize: '14px',
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  toggleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: 30,
+    gap: 10,
+  },
+  label: {
+    fontSize: 16,
   },
   toggle: {
-    width: '40px',
-    height: '20px',
-    borderRadius: '10px',
-    backgroundColor: '#333',
+    width: 40,
+    height: 20,
+    borderRadius: 20,
+    backgroundColor: '#444',
+    cursor: 'pointer',
     position: 'relative',
-    transition: 'all 0.3s ease',
+    transition: 'background-color 0.3s',
   },
-  toggleCircle: {
-    width: '16px',
-    height: '16px',
+  toggleDot: {
+    width: 18,
+    height: 18,
     borderRadius: '50%',
     backgroundColor: '#fff',
     position: 'absolute',
-    top: '2px',
-    transition: 'all 0.3s ease',
+    top: 1,
+    left: 1,
+    transition: 'transform 0.3s',
   },
-  tankContainer: {
-    width: '100px',
-    height: '200px',
+  tank: {
+    width: 120,
+    height: 200,
     border: '2px solid white',
-    borderRadius: '12px',
-    margin: '0 auto',
+    borderRadius: 20,
     overflow: 'hidden',
-    display: 'flex',
-    flexDirection: 'column-reverse',
-    backgroundColor: '#000',
+    position: 'relative',
+    marginBottom: 30,
   },
   water: {
+    position: 'absolute',
+    bottom: 0,
     width: '100%',
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'flex-end',
+    transition: 'height 0.5s',
   },
   waterText: {
-    color: 'white',
+    paddingBottom: 5,
     fontWeight: 'bold',
-    fontSize: '14px',
   },
   button: {
-    marginTop: '30px',
-    padding: '10px 20px',
-    border: '1px solid white',
-    backgroundColor: 'black',
+    backgroundColor: 'transparent',
+    border: '2px solid white',
     color: 'white',
-    borderRadius: '8px',
-    fontSize: '14px',
+    padding: '10px 20px',
+    borderRadius: 5,
     cursor: 'pointer',
-  },
-  moreDots: {
-    fontSize: '24px',
-    marginTop: '32px',
   },
 };
