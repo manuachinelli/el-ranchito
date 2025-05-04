@@ -1,29 +1,29 @@
-import React, { useState } from 'react';
-
 export default function Home() {
   const [automatic, setAutomatic] = useState(true);
-  const [percent, setPercent] = useState(60);
-  const [isLoading, setIsLoading] = useState(false);
+  const [percentage, setPercentage] = useState(60);
+  const [isFilling, setIsFilling] = useState(false);
 
-  const handleToggleAutomatic = () => {
-    const newValue = !automatic;
-    setAutomatic(newValue);
-    fetch('https://tu-n8n.com/webhook/automatico', {
-      method: 'POST',
-      body: JSON.stringify({ automatico: newValue }),
-      headers: { 'Content-Type': 'application/json' }
+  useEffect(() => {
+    if (isFilling && percentage >= 90) {
+      setIsFilling(false);
+    }
+  }, [percentage, isFilling]);
+
+  const toggleAutomatic = () => {
+    setAutomatic(!automatic);
+    fetch("https://tu-n8n.com/webhook/automatico", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ automatic: !automatic }),
     });
   };
 
-  const handleCargarAgua = () => {
-    setIsLoading(true);
-    fetch('https://tu-n8n.com/webhook/cargar-agua', {
-      method: 'POST'
-    }).then(() => {
-      setTimeout(() => {
-        setIsLoading(false);
-        setPercent(90); // simulamos que llegó al 90%
-      }, 5000);
+  const startFilling = () => {
+    setIsFilling(true);
+    fetch("https://tu-n8n.com/webhook/llenar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trigger: true }),
     });
   };
 
@@ -32,144 +32,152 @@ export default function Home() {
       <h1 style={styles.title}>El Ranchito</h1>
 
       <div style={styles.switchContainer}>
-        <span style={styles.switchLabel}>automatic</span>
+        <span style={styles.label}>automatic</span>
         <div
-          onClick={handleToggleAutomatic}
           style={{
-            ...styles.toggle,
-            backgroundColor: automatic ? '#4CAF50' : '#555',
-            justifyContent: automatic ? 'flex-end' : 'flex-start'
+            ...styles.switch,
+            backgroundColor: automatic ? "#2ecc71" : "#444",
           }}
+          onClick={toggleAutomatic}
         >
-          <div style={styles.toggleHandle}></div>
+          <div
+            style={{
+              ...styles.knob,
+              transform: automatic ? "translateX(20px)" : "translateX(0)",
+            }}
+          />
         </div>
       </div>
 
       <div style={styles.tank}>
         <div
           style={{
-            ...styles.water,
-            height: `${percent}%`,
-            backgroundColor: percent < 20 ? '#ff4d4d' : '#00bfff'
+            ...styles.fill,
+            height: `${percentage}%`,
+            backgroundColor:
+              percentage < 20 ? "#ff4d4d" : isFilling ? "#00ccff" : "#00bfff",
           }}
         >
-          <span style={styles.percentage}>{percent}%</span>
+          <span style={styles.percentageText}>
+            {percentage}% {isFilling && "⚡"}
+          </span>
         </div>
       </div>
 
-      {/* Bottom bar */}
-      <div style={styles.bottomBar}>
-        <button style={styles.sideButton}>Estado</button>
-        <button style={styles.centralButton} onClick={handleCargarAgua}>
-          {isLoading ? <div style={styles.loader}></div> : '+'}
-        </button>
-        <button style={styles.sideButton}>Info</button>
+      <div style={styles.navbar}>
+        <div style={styles.navItem} />
+        <div
+          style={{
+            ...styles.fab,
+            backgroundColor: isFilling ? "#444" : "#00bfff",
+            cursor: isFilling ? "default" : "pointer",
+          }}
+          onClick={() => !isFilling && startFilling()}
+        >
+          {isFilling ? "⏳" : "+"}
+        </div>
+        <div style={styles.navItem} />
       </div>
     </div>
   );
 }
 
+import { useState, useEffect } from "react";
+
 const styles = {
   container: {
-    backgroundColor: '#000',
-    color: '#fff',
-    minHeight: '100vh',
-    width: '100vw',
-    overflow: 'hidden',
-    padding: 0,
-    margin: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontFamily: 'Arial, sans-serif',
+    backgroundColor: "#000",
+    color: "#fff",
+    minHeight: "100vh",
+    padding: "20px",
+    fontFamily: "Arial, sans-serif",
+    textAlign: "center",
+    boxSizing: "border-box",
+    overflow: "hidden",
   },
   title: {
-    marginBottom: 20,
+    fontSize: "28px",
+    fontWeight: "bold",
+    marginBottom: "10px",
   },
   switchContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    marginBottom: 20,
-    gap: 10,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: "20px",
+    gap: "10px",
   },
-  switchLabel: {
-    fontSize: 16,
+  label: {
+    fontSize: "16px",
   },
-  toggle: {
-    width: 50,
-    height: 26,
-    borderRadius: 13,
-    padding: 3,
-    display: 'flex',
-    cursor: 'pointer',
-    transition: 'background-color 0.3s',
+  switch: {
+    width: "40px",
+    height: "20px",
+    borderRadius: "10px",
+    display: "flex",
+    alignItems: "center",
+    padding: "2px",
+    transition: "background-color 0.3s",
   },
-  toggleHandle: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#fff',
-    borderRadius: '50%',
-    transition: 'all 0.3s',
+  knob: {
+    width: "16px",
+    height: "16px",
+    backgroundColor: "#fff",
+    borderRadius: "50%",
+    transition: "transform 0.3s",
   },
   tank: {
-    width: 100,
-    height: 200,
-    border: '2px solid white',
-    borderRadius: 10,
-    overflow: 'hidden',
-    position: 'relative',
-    marginBottom: 100,
+    width: "120px",
+    height: "250px",
+    border: "2px solid #fff",
+    borderRadius: "15px",
+    margin: "0 auto 30px auto",
+    overflow: "hidden",
+    position: "relative",
+    backgroundColor: "#000",
   },
-  water: {
-    width: '100%',
-    position: 'absolute',
+  fill: {
+    position: "absolute",
     bottom: 0,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "height 0.5s, background-color 0.5s",
   },
-  percentage: {
-    color: '#fff',
-    fontWeight: 'bold',
+  percentageText: {
+    fontSize: "16px",
+    color: "#fff",
+    fontWeight: "bold",
+    position: "absolute",
+    top: "10px",
+    width: "100%",
+    textAlign: "center",
   },
-  bottomBar: {
-    position: 'fixed',
+  navbar: {
+    position: "fixed",
     bottom: 0,
-    width: '100%',
-    height: 60,
-    backgroundColor: '#000',
-    display: 'flex',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    borderTop: '1px solid #333',
+    left: 0,
+    width: "100%",
+    height: "60px",
+    backgroundColor: "#111",
+    display: "flex",
+    justifyContent: "space-around",
+    alignItems: "center",
   },
-  sideButton: {
-    backgroundColor: 'transparent',
-    border: 'none',
-    color: '#fff',
-    fontSize: 16,
-    cursor: 'pointer',
+  navItem: {
+    width: "40px",
+    height: "40px",
   },
-  centralButton: {
-    backgroundColor: '#fff',
-    border: 'none',
-    color: '#000',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    fontSize: 24,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-  },
-  loader: {
-    border: '3px solid #f3f3f3',
-    borderTop: '3px solid #3498db',
-    borderRadius: '50%',
-    width: 20,
-    height: 20,
-    animation: 'spin 1s linear infinite',
+  fab: {
+    width: "60px",
+    height: "60px",
+    borderRadius: "30px",
+    fontSize: "28px",
+    color: "#fff",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    transition: "all 0.3s",
   },
 };
