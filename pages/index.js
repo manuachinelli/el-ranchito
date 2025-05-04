@@ -1,74 +1,47 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 export default function Home() {
   const [automatic, setAutomatic] = useState(true);
-  const [waterLevel, setWaterLevel] = useState(60); // valor inicial simulado
+  const [percent, setPercent] = useState(60);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Leer estado guardado en el navegador
-  useEffect(() => {
-    const savedAuto = localStorage.getItem('automatic');
-    if (savedAuto !== null) {
-      setAutomatic(savedAuto === 'true');
-    }
-  }, []);
-
-  // Guardar estado cuando cambia
-  useEffect(() => {
-    localStorage.setItem('automatic', automatic);
-  }, [automatic]);
-
-  // Simula actualización de porcentaje desde sensor
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetch('/api/sensor') // podés reemplazar por una URL real de n8n
-        .then(res => res.json())
-        .then(data => {
-          if (data?.percent) setWaterLevel(data.percent);
-        })
-        .catch(() => {
-          // simula agua bajando si falla
-          setWaterLevel(w => Math.max(w - 1, 0));
-        });
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const toggleAutomatic = () => {
-    setAutomatic(!automatic);
+  const handleToggleAutomatic = () => {
+    const newValue = !automatic;
+    setAutomatic(newValue);
     fetch('https://tu-n8n.com/webhook/automatico', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ automatic: !automatic }),
+      body: JSON.stringify({ automatico: newValue }),
+      headers: { 'Content-Type': 'application/json' }
     });
   };
 
-  const cargarAgua = () => {
+  const handleCargarAgua = () => {
+    setIsLoading(true);
     fetch('https://tu-n8n.com/webhook/cargar-agua', {
       method: 'POST'
+    }).then(() => {
+      setTimeout(() => {
+        setIsLoading(false);
+        setPercent(90); // simulamos que llegó al 90%
+      }, 5000);
     });
   };
-
-  const tankColor = waterLevel < 20 ? '#FF4C4C' : '#00BFFF';
 
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>El Ranchito</h1>
 
-      <div style={styles.toggleRow}>
-        <span style={styles.label}>automatic</span>
+      <div style={styles.switchContainer}>
+        <span style={styles.switchLabel}>automatic</span>
         <div
+          onClick={handleToggleAutomatic}
           style={{
             ...styles.toggle,
-            backgroundColor: automatic ? '#4CAF50' : '#444',
+            backgroundColor: automatic ? '#4CAF50' : '#555',
+            justifyContent: automatic ? 'flex-end' : 'flex-start'
           }}
-          onClick={toggleAutomatic}
         >
-          <div
-            style={{
-              ...styles.toggleDot,
-              transform: automatic ? 'translateX(20px)' : 'translateX(0px)',
-            }}
-          />
+          <div style={styles.toggleHandle}></div>
         </div>
       </div>
 
@@ -76,17 +49,22 @@ export default function Home() {
         <div
           style={{
             ...styles.water,
-            height: `${waterLevel}%`,
-            backgroundColor: tankColor,
+            height: `${percent}%`,
+            backgroundColor: percent < 20 ? '#ff4d4d' : '#00bfff'
           }}
         >
-          <span style={styles.waterText}>{waterLevel}%</span>
+          <span style={styles.percentage}>{percent}%</span>
         </div>
       </div>
 
-      <button style={styles.button} onClick={cargarAgua}>
-        Cargar agua
-      </button>
+      {/* Bottom bar */}
+      <div style={styles.bottomBar}>
+        <button style={styles.sideButton}>Estado</button>
+        <button style={styles.centralButton} onClick={handleCargarAgua}>
+          {isLoading ? <div style={styles.loader}></div> : '+'}
+        </button>
+        <button style={styles.sideButton}>Info</button>
+      </div>
     </div>
   );
 }
@@ -96,7 +74,10 @@ const styles = {
     backgroundColor: '#000',
     color: '#fff',
     minHeight: '100vh',
-    padding: 20,
+    width: '100vw',
+    overflow: 'hidden',
+    padding: 0,
+    margin: 0,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -104,66 +85,91 @@ const styles = {
     fontFamily: 'Arial, sans-serif',
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
     marginBottom: 20,
   },
-  toggleRow: {
+  switchContainer: {
     display: 'flex',
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 20,
     gap: 10,
   },
-  label: {
+  switchLabel: {
     fontSize: 16,
   },
   toggle: {
-    width: 40,
-    height: 20,
-    borderRadius: 20,
-    backgroundColor: '#444',
+    width: 50,
+    height: 26,
+    borderRadius: 13,
+    padding: 3,
+    display: 'flex',
     cursor: 'pointer',
-    position: 'relative',
     transition: 'background-color 0.3s',
   },
-  toggleDot: {
-    width: 18,
-    height: 18,
-    borderRadius: '50%',
+  toggleHandle: {
+    width: 20,
+    height: 20,
     backgroundColor: '#fff',
-    position: 'absolute',
-    top: 1,
-    left: 1,
-    transition: 'transform 0.3s',
+    borderRadius: '50%',
+    transition: 'all 0.3s',
   },
   tank: {
-    width: 120,
+    width: 100,
     height: 200,
     border: '2px solid white',
-    borderRadius: 20,
+    borderRadius: 10,
     overflow: 'hidden',
     position: 'relative',
-    marginBottom: 30,
+    marginBottom: 100,
   },
   water: {
+    width: '100%',
     position: 'absolute',
     bottom: 0,
-    width: '100%',
     display: 'flex',
     justifyContent: 'center',
-    alignItems: 'flex-end',
-    transition: 'height 0.5s',
+    alignItems: 'center',
   },
-  waterText: {
-    paddingBottom: 5,
+  percentage: {
+    color: '#fff',
     fontWeight: 'bold',
   },
-  button: {
+  bottomBar: {
+    position: 'fixed',
+    bottom: 0,
+    width: '100%',
+    height: 60,
+    backgroundColor: '#000',
+    display: 'flex',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    borderTop: '1px solid #333',
+  },
+  sideButton: {
     backgroundColor: 'transparent',
-    border: '2px solid white',
-    color: 'white',
-    padding: '10px 20px',
-    borderRadius: 5,
+    border: 'none',
+    color: '#fff',
+    fontSize: 16,
     cursor: 'pointer',
+  },
+  centralButton: {
+    backgroundColor: '#fff',
+    border: 'none',
+    color: '#000',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    fontSize: 24,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+  },
+  loader: {
+    border: '3px solid #f3f3f3',
+    borderTop: '3px solid #3498db',
+    borderRadius: '50%',
+    width: 20,
+    height: 20,
+    animation: 'spin 1s linear infinite',
   },
 };
