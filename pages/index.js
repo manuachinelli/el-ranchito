@@ -1,117 +1,114 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ranchito v1.0</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #fff;
-      color: #111;
-      margin: 0;
-      padding: 1em;
+import { useEffect, useState } from 'react';
+
+export default function Home() {
+  const [distancia, setDistancia] = useState(null);
+  const [lluvia, setLluvia] = useState(null);
+  const [rele, setRele] = useState(null);
+  const [status, setStatus] = useState('🔄');
+
+  const fetchData = async () => {
+    try {
+      const a = await fetch('http://protoa.local/data'); // o http://192.168.0.83/data
+      const datos = await a.json();
+      setDistancia(datos.distancia);
+      setLluvia(datos.lluvia);
+
+      const b = await fetch('http://rele.local/estado-rele'); // o http://192.168.0.84/estado-rele
+      const estadoRele = await b.json();
+      setRele(estadoRele.activo);
+      setStatus('✅');
+    } catch (err) {
+      setStatus('❌ Error');
     }
-    header {
-      text-align: right;
-      font-size: 0.8em;
-      margin-bottom: 2em;
-    }
-    .container {
-      display: grid;
-      gap: 2em;
-    }
-    .card {
-      border: 2px solid #000;
-      padding: 1em;
-    }
-    .status {
-      font-size: 1.2em;
-    }
-    .barra {
-      height: 200px;
-      width: 60px;
-      border: 2px solid #000;
-      position: relative;
-      background: #e0e0e0;
-      margin: 1em 0;
-    }
-    .nivel {
-      background: #000;
-      width: 100%;
-      position: absolute;
-      bottom: 0;
-    }
-    button {
-      background: none;
-      border: 2px solid #000;
-      padding: 0.5em 1em;
-      cursor: pointer;
-      font-weight: bold;
-      transition: 0.2s;
-    }
-    button:hover {
-      background: #000;
-      color: #fff;
-    }
-  </style>
-</head>
-<body>
-  <header>Ranchito v1.0</header>
-  <div class="container">
-    <div class="card">
-      <div class="status"><strong>💧 Bomba:</strong> <span id="bombaEstado">Cargando...</span></div>
-      <button onclick="activarBomba()">Activar bomba</button>
+  };
+
+  const activarRele = async () => {
+    await fetch('http://rele.local/activar-rele');
+    fetchData();
+  };
+
+  useEffect(() => {
+    fetchData();
+    const intervalo = setInterval(fetchData, 5000);
+    return () => clearInterval(intervalo);
+  }, []);
+
+  const porcentaje = distancia !== null ? Math.max(0, Math.min(100, 100 - distancia)) : 0;
+  const lluviaEstado = lluvia > 1000 ? '🌧️ Diluvio' : lluvia > 500 ? '🌦️ Lluvia moderada' : '🌤️ Seco';
+
+  return (
+    <div style={estilo.pagina}>
+      <header style={estilo.header}>
+        <span>Ranchito v1.0</span>
+      </header>
+
+      <main style={estilo.main}>
+        <h1 style={estilo.titulo}>Tanque de agua</h1>
+
+        <div style={estilo.tanque}>
+          <div style={{ ...estilo.agua, height: `${porcentaje}%` }} />
+        </div>
+        <p>💧 Distancia: {distancia ?? '--'} cm</p>
+
+        <h2>🌧️ Lluvia: {lluvia ?? '--'} → {lluviaEstado}</h2>
+
+        <h2>⚙️ Bomba: {rele === true ? '🟢 Activa' : rele === false ? '🔴 Apagada' : '--'}</h2>
+
+        <button style={estilo.boton} onClick={activarRele}>Activar bomba</button>
+        <p style={estilo.status}>Estado conexión: {status}</p>
+      </main>
     </div>
-    <div class="card">
-      <div><strong>📏 Tanque:</strong> <span id="distancia">-</span> cm</div>
-      <div class="barra">
-        <div id="nivel" class="nivel" style="height: 0%"></div>
-      </div>
-    </div>
-    <div class="card">
-      <div><strong>🌧️ Lluvia:</strong> <span id="lluviaNivel">-</span></div>
-      <div id="estadoLluvia">-</div>
-    </div>
-  </div>
+  );
+}
 
-  <script>
-    async function cargarDatos() {
-      try {
-        const protoA = await fetch("http://protoa.local/estado");
-        const data = await protoA.json();
-        document.getElementById("distancia").textContent = data.distancia.toFixed(2);
-
-        const porcentaje = Math.max(0, Math.min(100, 100 - (data.distancia)));
-        document.getElementById("nivel").style.height = `${porcentaje}%`;
-
-        document.getElementById("lluviaNivel").textContent = data.lluvia;
-        document.getElementById("estadoLluvia").textContent = `☁️ ${data.estadoLluvia}`;
-      } catch (e) {
-        console.log("Error cargando datos de Proto A", e);
-      }
-
-      try {
-        const protoB = await fetch("http://rele.local/estado-rele");
-        const estado = await protoB.text();
-        document.getElementById("bombaEstado").textContent = estado.includes("1") ? "Activa" : "Inactiva";
-      } catch (e) {
-        console.log("Error cargando datos de Proto B", e);
-      }
-    }
-
-    async function activarBomba() {
-      try {
-        await fetch("http://rele.local/activar-rele");
-        setTimeout(cargarDatos, 1000); // recarga después de activar
-      } catch (e) {
-        alert("No se pudo activar la bomba");
-      }
-    }
-
-    setInterval(cargarDatos, 3000);
-    cargarDatos();
-  </script>
-</body>
-</html>
-
+const estilo = {
+  pagina: {
+    fontFamily: 'sans-serif',
+    backgroundColor: '#fff',
+    color: '#111',
+    minHeight: '100vh',
+    padding: '20px',
+    boxSizing: 'border-box',
+  },
+  header: {
+    textAlign: 'right',
+    fontSize: '0.8rem',
+    marginBottom: '10px',
+  },
+  main: {
+    textAlign: 'center',
+  },
+  titulo: {
+    margin: '0.5em 0',
+    fontSize: '1.5rem',
+  },
+  tanque: {
+    height: '200px',
+    width: '80px',
+    border: '2px solid #111',
+    margin: 'auto',
+    position: 'relative',
+    marginBottom: '1em',
+  },
+  agua: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    backgroundColor: '#00bcd4',
+    transition: 'height 0.5s ease',
+  },
+  boton: {
+    padding: '10px 20px',
+    marginTop: '10px',
+    cursor: 'pointer',
+    background: '#111',
+    color: '#fff',
+    border: 'none',
+    fontWeight: 'bold',
+  },
+  status: {
+    marginTop: '10px',
+    fontSize: '0.9rem',
+    color: '#555',
+  }
+};
