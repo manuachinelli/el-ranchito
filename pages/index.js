@@ -1,55 +1,66 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const distanciaEl = document.getElementById("distancia");
-  const lluviaEl = document.getElementById("lluvia");
-  const estadoLluviaEl = document.getElementById("estado-lluvia");
-  const estadoBombaEl = document.getElementById("estado-bomba");
-  const nivelTanqueEl = document.getElementById("nivel-tanque");
-  const conexionEl = document.getElementById("estado-conexion");
-  const boton = document.getElementById("boton-bomba");
+import { useEffect, useState } from "react";
+
+export default function Home() {
+  const [distancia, setDistancia] = useState(null);
+  const [lluvia, setLluvia] = useState(null);
+  const [estadoBomba, setEstadoBomba] = useState("--");
+  const [conexion, setConexion] = useState(false);
 
   const PROTO_A = "http://192.168.0.83";
   const PROTO_B = "http://192.168.0.84";
 
-  async function actualizarDatos() {
+  const obtenerDatos = async () => {
     try {
       const res = await fetch(`${PROTO_A}/datos`);
       const data = await res.json();
-
-      const { distancia, lluvia } = data;
-      distanciaEl.innerText = distancia.toFixed(2);
-
-      // actualizamos nivel visual del tanque
-      const porcentaje = Math.max(0, Math.min(1, (250 - distancia) / 250));
-      nivelTanqueEl.style.height = `${porcentaje * 100}%`;
-
-      lluviaEl.innerText = lluvia;
-      if (lluvia < 500) estadoLluviaEl.innerText = "🌧 Lluvia ligera";
-      else if (lluvia < 1000) estadoLluviaEl.innerText = "🌧 Lluvia moderada";
-      else estadoLluviaEl.innerText = "🌧🌊 Diluvio";
-
-      conexionEl.innerHTML = '✅ Conectado';
-    } catch (e) {
-      conexionEl.innerHTML = '❌ Error';
+      setDistancia(data.distancia);
+      setLluvia(data.lluvia);
+      setConexion(true);
+    } catch {
+      setConexion(false);
     }
 
     try {
-      const resB = await fetch(`${PROTO_B}/estado-rele`);
-      const estado = await resB.text();
-      estadoBombaEl.innerText = estado === "1" ? "💡 Activa" : "⛔ Inactiva";
-    } catch (e) {
-      estadoBombaEl.innerText = "--";
+      const res = await fetch(`${PROTO_B}/estado-rele`);
+      const estado = await res.text();
+      setEstadoBomba(estado === "1" ? "💡 Activa" : "⛔ Inactiva");
+    } catch {
+      setEstadoBomba("--");
     }
-  }
+  };
 
-  boton.addEventListener("click", async () => {
+  const activarBomba = async () => {
     try {
       await fetch(`${PROTO_B}/activar-rele`);
-      setTimeout(actualizarDatos, 1000);
-    } catch (e) {
-      console.log("Error al activar la bomba");
-    }
-  });
+      setTimeout(obtenerDatos, 1000);
+    } catch {}
+  };
 
-  setInterval(actualizarDatos, 3000);
-  actualizarDatos();
-});
+  useEffect(() => {
+    obtenerDatos();
+    const interval = setInterval(obtenerDatos, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const estadoLluvia = lluvia == null
+    ? "--"
+    : lluvia < 500
+    ? "🌧 Lluvia ligera"
+    : lluvia < 1000
+    ? "🌧 Lluvia moderada"
+    : "🌧🌊 Diluvio";
+
+  return (
+    <main style={{ fontFamily: "sans-serif", padding: 20 }}>
+      <h2>Tanque de agua</h2>
+      <div style={{ border: "1px solid black", height: 200, width: 80, marginBottom: 10 }}></div>
+      <div>💧 Distancia: {distancia?.toFixed(2) ?? "--"} cm</div>
+      <div>🌧 Lluvia: {lluvia ?? "--"} → {estadoLluvia}</div>
+      <div>⚙️ Bomba: {estadoBomba}</div>
+      <button onClick={activarBomba}>Activar bomba</button>
+      <div style={{ marginTop: 10 }}>
+        Estado conexión: {conexion ? "✅ OK" : "❌ Error"}
+      </div>
+    </main>
+  );
+}
