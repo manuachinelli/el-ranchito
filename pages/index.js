@@ -1,72 +1,51 @@
-import { useEffect, useState } from 'react';
+const estadoBomba = document.getElementById("estado-bomba");
+const distancia = document.getElementById("distancia");
+const lluvia = document.getElementById("lluvia");
+const modoAuto = document.getElementById("modo-auto");
 
-export default function Home() {
-  const [distancia, setDistancia] = useState(null);
-  const [lluvia, setLluvia] = useState(null);
-  const [estadoLluvia, setEstadoLluvia] = useState('--');
-  const [rele, setRele] = useState(null);
-  const [conexion, setConexion] = useState(false);
+const toggleBomba = document.getElementById("toggle-bomba");
+const toggleModoAuto = document.getElementById("toggle-modo-auto");
 
-  const ipProtoA = '192.168.0.83';
-  const ipProtoB = '192.168.0.84';
+const IP_PROTOA = "192.168.0.83"; // la IP del PROTO A
+const IP_PROTOB = "192.168.0.84"; // la IP del PROTO B
 
-  const actualizar = async () => {
-    try {
-      const res = await fetch(`http://${ipProtoA}/estado`);
-      const data = await res.json();
-      setDistancia(data.distancia);
-      setLluvia(data.lluvia);
-      setEstadoLluvia(data.estado);
-      setConexion(true);
-    } catch {
-      setConexion(false);
-    }
+function obtenerEstado() {
+  fetch(`http://${IP_PROTOA}/estado`)
+    .then(res => res.json())
+    .then(data => {
+      distancia.innerText = `${data.distancia} cm`;
+      lluvia.innerText = `${data.estado}`;
+      modoAuto.innerText = data.modoAuto ? "Automático" : "Manual";
+      toggleModoAuto.checked = data.modoAuto;
+    });
 
-    try {
-      const res = await fetch(`http://${ipProtoB}/estado-rele`);
-      const data = await res.json();
-      setRele(data.rele === 1);
-    } catch {
-      setRele(null);
-    }
-  };
-
-  const toggleRele = async () => {
-    try {
-      await fetch(`http://${ipProtoB}/activar-rele`);
-      setTimeout(actualizar, 1500);
-    } catch (e) {
-      console.log("Error al activar bomba");
-    }
-  };
-
-  useEffect(() => {
-    actualizar();
-    const interval = setInterval(actualizar, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const porcentaje = distancia != null ? Math.max(0, Math.min(100, 100 - (distancia / 100) * 100)) : 0;
-
-  return (
-    <div style={{ fontFamily: 'Arial', color: '#000', padding: '2rem', textAlign: 'center' }}>
-      <div style={{ position: 'absolute', top: 10, right: 20, fontSize: 12, color: '#666' }}>Ranchito v1.0</div>
-      <h2>Tanque de agua</h2>
-      <div style={{ width: 80, height: 200, border: '2px solid black', margin: '1rem auto', background: '#eee', position: 'relative' }}>
-        <div style={{ position: 'absolute', bottom: 0, width: '100%', background: 'black', height: `${porcentaje}%` }} />
-      </div>
-      <p>💧 Distancia: {distancia != null ? `${distancia.toFixed(2)} cm` : '--'}</p>
-      <p>🌧️ Lluvia: {lluvia ?? '--'} → {estadoLluvia}</p>
-      <p>⚙️ Bomba: {rele == null ? '--' : rele ? 'Activa' : 'Inactiva'}</p>
-
-      <label style={{ display: 'inline-block', marginTop: '1rem' }}>
-        <input type="checkbox" checked={rele || false} onChange={toggleRele} style={{ transform: 'scale(1.5)', marginRight: '0.5rem' }} />
-        {rele ? 'Apagar bomba' : 'Activar bomba'}
-      </label>
-
-      <p style={{ marginTop: '1rem' }}>
-        Estado conexión: {conexion ? '✅ Online' : '❌ Error'}
-      </p>
-    </div>
-  );
+  fetch(`http://${IP_PROTOB}/estado-rele`)
+    .then(res => res.json())
+    .then(data => {
+      estadoBomba.innerText = data.rele ? "Encendida" : "Apagada";
+      toggleBomba.checked = data.rele;
+    });
 }
+
+toggleBomba.addEventListener("change", () => {
+  const url = toggleBomba.checked
+    ? `http://${IP_PROTOB}/encender-rele`
+    : `http://${IP_PROTOB}/apagar-rele`;
+
+  fetch(url)
+    .then(() => obtenerEstado())
+    .catch(err => console.error("Error al cambiar bomba", err));
+});
+
+toggleModoAuto.addEventListener("change", () => {
+  const url = toggleModoAuto.checked
+    ? `http://${IP_PROTOA}/modo-auto`
+    : `http://${IP_PROTOA}/modo-manual`;
+
+  fetch(url)
+    .then(() => obtenerEstado())
+    .catch(err => console.error("Error al cambiar modo", err));
+});
+
+setInterval(obtenerEstado, 3000);
+obtenerEstado();
