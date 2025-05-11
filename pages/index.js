@@ -7,65 +7,53 @@ export default function Home() {
   const [bomba, setBomba] = useState('--');
   const [conexion, setConexion] = useState(false);
 
-  const actualizarDatos = async () => {
-    try {
-      const res = await fetch('http://192.168.0.83/datos');
-      const data = await res.json();
+  useEffect(() => {
+    const actualizarDatos = async () => {
+      try {
+        const res = await fetch('http://192.168.0.83/datos');
+        const data = await res.json();
+        setConexion(true);
+        setDistancia(data.distancia.toFixed(2));
+        setLluvia(data.lluvia);
+        setEstadoLluvia(data.estadoLluvia);
+      } catch (e) {
+        setConexion(false);
+      }
 
-      setConexion(true);
-      setDistancia(data.distancia.toFixed(2));
-      setLluvia(data.lluvia);
-      setEstadoLluvia(data.estadoLluvia);
-    } catch (error) {
-      setConexion(false);
-      console.error('Error al conectar con PROTO A');
-    }
+      try {
+        const res2 = await fetch('http://rele.local/estado-rele');
+        const data2 = await res2.json();
+        setBomba(data2.activado ? 'Activa' : 'Inactiva');
+      } catch (e) {
+        console.log('Error al obtener estado del relé');
+      }
+    };
 
-    try {
-      const res2 = await fetch('http://rele.local/estado-rele');
-      const data2 = await res2.json();
-      setBomba(data2.activado ? 'Activa' : 'Inactiva');
-    } catch (error) {
-      console.error('Error al obtener estado del relé');
-    }
-  };
+    actualizarDatos();
+    const interval = setInterval(actualizarDatos, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const activarBomba = async () => {
     try {
       await fetch('http://rele.local/activar-rele');
-    } catch (error) {
-      console.error('Error al activar bomba');
+    } catch (e) {
+      console.log('Error al activar bomba');
     }
   };
 
-  useEffect(() => {
-    actualizarDatos();
-    const intervalo = setInterval(actualizarDatos, 3000);
-    return () => clearInterval(intervalo);
-  }, []);
+  const lluviaIcono = () => {
+    if (estadoLluvia === 'Diluvio') return '🌊 Diluvio';
+    if (estadoLluvia === 'Lluvia moderada') return '🌧️ Moderada';
+    if (estadoLluvia === 'Garuando') return '🌦️ Garúa';
+    return '🌤️ Seco';
+  };
 
   return (
-    <div style={{
-      fontFamily: 'Arial, sans-serif',
-      background: '#fff',
-      color: '#000',
-      textAlign: 'center',
-      padding: '20px'
-    }}>
-      <div style={{ position: 'absolute', top: 10, right: 10, fontSize: 12 }}>
-        Ranchito v.1.0
-      </div>
-
+    <div style={{ fontFamily: 'Arial', backgroundColor: '#fff', color: '#000', textAlign: 'center', padding: 20 }}>
+      <div style={{ position: 'absolute', top: 10, right: 10, fontSize: 12 }}>Ranchito v.1.0</div>
       <h2>Tanque de agua</h2>
-
-      <div style={{
-        width: 80,
-        height: 200,
-        margin: '0 auto',
-        border: '2px solid black',
-        position: 'relative',
-        background: '#eee'
-      }}>
+      <div style={{ width: 80, height: 200, margin: '0 auto', border: '2px solid black', position: 'relative', background: '#eee' }}>
         <div style={{
           position: 'absolute',
           bottom: 0,
@@ -74,13 +62,10 @@ export default function Home() {
           height: `${Math.min(100, Math.max(0, 100 - distancia))}%`
         }} />
       </div>
-
       <div style={{ marginTop: 10 }}>💧 Distancia: {distancia} cm</div>
 
       <div style={{ marginTop: 20, fontSize: 20 }}>
-        🌧️ Lluvia: {lluvia} → {estadoLluvia === 'Diluvio' ? '🌊 Diluvio' :
-          estadoLluvia === 'Lluvia moderada' ? '🌧️ Moderada' :
-            estadoLluvia === 'Garuando' ? '🌦️ Garúa' : '🌤️ Seco'}
+        🌧️ Lluvia: {lluvia} → {lluviaIcono()}
       </div>
 
       <div style={{ marginTop: 20, fontSize: 20 }}>
